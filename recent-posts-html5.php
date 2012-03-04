@@ -11,12 +11,6 @@
 add_action( 'widgets_init', create_function('', 'return register_widget("Recent_Posts_Html5");') );
 
 
-# Make sure required fields exist for this plugin
-#register_activation_hook( __FILE__, array( 'Recent_Posts_Html5', 'activation_check' ) );
-
-
-
-
  
 class Recent_Posts_Html5 extends WP_Widget {
 
@@ -40,21 +34,55 @@ class Recent_Posts_Html5 extends WP_Widget {
   */
 	function form($instance) {
 	
-	  // Default values!
+	  // Set any uninitialized args to default values
     $instance = wp_parse_args( (array) $instance, array(  'recent_title' => 'Recent Posts',
-                                                          'recent_number' => 5 ) );
+                                                          'recent_number' => 5,
+                                                          'include_author' => true ) );
                  
-    # Get current values                                                      
+    # Get current values or set to defaults                                        
 		$recent_title = isset($instance['recent_title']) ? esc_attr($instance['recent_title']) : 'abc';
 		$recent_number = isset($instance['recent_number']) ? absint($instance['recent_number']) : 5;
-		
-		$output_recent = "<p><label for='{$this->get_field_id('recent_title')}'>Title:</label>";
-		$output_recent .= "<input class='widefat' id='{$this->get_field_id('recent_title')}' name='{$this->get_field_name('recent_title')}'";
-	  $output_recent .= "type='text' value='{$recent_title}' /></p>";
+    $include_author = isset($instance['include_author']) ? (bool) $instance['include_author'] : true;		
 		
 		
+		
+		# Widget Title
+		$output_title = "<p style='text-align:left'>";
+    $output_title .= '<label for="' . $this->get_field_name('recent_title') . '">' . __('Title: ');		
+		$output_title .= "<input id='{$this->get_field_id('recent_title')}' name='{$this->get_field_name('recent_title')}'";
+	  $output_title .= "type='text' value='{$recent_title}' />";
+	  $output_title .= "</label></p>";
+		
+		
+		# Number of posts to list
+    // dropdown: number of blogs to display at one time
+    $output_number = '<p style="text-align:left;">';
+    $output_number .= '<label for="' . $this->get_field_name('recent_number') . '">' . __('Number of posts to display: ');
+    $output_number .= '<select id="' . $this->get_field_id('recent_number') . 
+                                  '" name="' . $this->get_field_name('recent_number') . '"> ';
+    for( $i = 1; $i <=10; ++$i ){
+      $selected =  ($recent_number == $i ? ' selected="selected"' : '' );
+      $output_number  .= '<option value="' . $i . '"' .  $selected . '>' . $i .  '</option>';
+    }		
+    $output_number .= '</label></select></p>';	
+		
+		
+    # Include Author
+    $output_include_author = '<p style="text-align:left;">';    
+    $output_include_author .= '<label for="' . $this->get_field_id('include_author') . '">' . __('Include Author? ');
+    $output_include_author .= '<input type="checkbox" id="' . $this->get_field_id('include_author') . 
+                                                     '" name="' . $this->get_field_name('include_author') . '"';
+    if( $include_author ){
+      $output_include_author .= ' checked="checked" ';
+    }
+    $output_include_author .= '/>';
+    $output_number .= '</label></p>';	
+    
+    		
 
-    echo $output_recent;
+    echo $output_title;
+    echo $output_number;
+    echo $output_include_author;
 	
 	}
 	
@@ -72,7 +100,13 @@ class Recent_Posts_Html5 extends WP_Widget {
     // they will not break the page the widget appears on.
     $instance['recent_title'] = strip_tags(stripslashes($new_instance['recent_title']));
     $instance['recent_number'] = strip_tags(stripslashes($new_instance['recent_number']));
-
+    
+    # Include author = checkbox
+    $instance['include_author'] = 0;
+    if( isset( $new_instance['include_author'] ) ){
+      $instance['include_author'] = 1;
+    }          
+    
    return $instance;
 	}
 	
