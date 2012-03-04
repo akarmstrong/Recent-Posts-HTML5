@@ -121,11 +121,12 @@ class Recent_Posts_Html5 extends WP_Widget {
 		extract($args);
 		
 		// extract widget config options. 
-		// use if statement to ensure that if the string was empty that the default will be used
-#    $blogs_per_page = empty($instance['blogs_per_page']) ? '5' : $instance['blogs_per_page'];
     // $title has a special filter applied because it is the title of the widget which WordPress recognizes.
     $recent_title = apply_filters('widget_title', empty($instance['recent_title']) ? '&nbsp;' : $instance['recent_title']);
-
+    $recent_number = empty($instance['recent_number']) ? '5' : $instance['recent_number'];
+    $include_author = (isset($instance['include_author']) && $instance['include_author']) ? true : false;
+    
+    
     # Before the widget
     echo $before_widget;
     
@@ -133,6 +134,40 @@ class Recent_Posts_Html5 extends WP_Widget {
     if ( $recent_title ){
      echo $before_title . $recent_title . $after_title;
     }    
+    
+    // Get posts 
+    $query = new WP_Query(array('posts_per_page' => $recent_number, 'no_found_rows' => true, 'post_status' => 'publish', 'ignore_sticky_posts' => true));
+    
+    // Include author with post titles
+    if( $include_author ){
+      
+      // Output posts
+      while ($query->have_posts()){
+        $query->the_post();
+        
+        $permalink = get_permalink();
+        $post_title = esc_attr(get_the_title() ? get_the_title() : get_the_ID());
+        if( get_the_title() ){
+          $post_name = get_the_title();
+        } else {
+          $post_name = get_the_ID();
+        }
+        
+        $output = "<cite><li><a href='$permalink' title='$post_title' >$post_name</a></li></cite>";
+        echo $output;
+      }
+      
+    // Just do post titles
+    } else {
+    
+      // Output posts
+      for( $post_count = 0; $post_count < $recent_number; $post_count++ ){
+        
+      
+      }
+          
+    }
+    
     
     
     # After the widget
