@@ -35,24 +35,33 @@ class Recent_Posts_Html5 extends WP_Widget {
 	function form($instance) {
 	
 	  // Set any uninitialized args to default values
-    $instance = wp_parse_args( (array) $instance, array(  'recent_title' => 'Recent Posts',
+    $instance = wp_parse_args( (array) $instance, array(  'widget_title' => 'Recent Posts',
                                                           'recent_number' => 5,
-                                                          'include_author' => true ) );
+                                                          'include_author' => true,
+                                                          'recent_title' => 'Untitled Post' ) );
                  
     # Get current values or set to defaults                                        
-		$recent_title = isset($instance['recent_title']) ? esc_attr($instance['recent_title']) : 'abc';
-		$recent_number = isset($instance['recent_number']) ? absint($instance['recent_number']) : 5;
-    $include_author = isset($instance['include_author']) ? (bool) $instance['include_author'] : true;		
+		$widget_title = esc_attr($instance['widget_title']);
+		$recent_number = absint($instance['recent_number']);
+    $include_author =  (bool) $instance['include_author'];	
+    $recent_title = esc_attr($instance['recent_title']);	
 		
 		
 		
 		# Widget Title
 		$output_title = "<p style='text-align:left'>";
-    $output_title .= '<label for="' . $this->get_field_name('recent_title') . '">' . __('Title: ');		
-		$output_title .= "<input id='{$this->get_field_id('recent_title')}' name='{$this->get_field_name('recent_title')}'";
-	  $output_title .= "type='text' value='{$recent_title}' />";
+    $output_title .= '<label for="' . $this->get_field_name('widget_title') . '">' . __('Widget Title: ');		
+		$output_title .= "<input id='{$this->get_field_id('widget_title')}' name='{$this->get_field_name('widget_title')}'";
+	  $output_title .= "type='text' value='{$widget_title}' />";
 	  $output_title .= "</label></p>";
 		
+		
+		# Widget Title
+		$output_name = "<p style='text-align:left'>";
+    $output_name .= '<label for="' . $this->get_field_name('recent_title') . '">' . __('Default Post Title: ');		
+		$output_name .= "<input id='{$this->get_field_id('recent_title')}' name='{$this->get_field_name('recent_title')}'";
+	  $output_name .= "type='text' value='{$recent_title}' />";
+	  $output_name .= "</label></p>";		
 		
 		# Number of posts to list
     // dropdown: number of blogs to display at one time
@@ -81,6 +90,7 @@ class Recent_Posts_Html5 extends WP_Widget {
     		
 
     echo $output_title;
+    echo $output_name;
     echo $output_number;
     echo $output_include_author;
 	
@@ -98,8 +108,9 @@ class Recent_Posts_Html5 extends WP_Widget {
     
     // strip_tags() and stripslashes() to ensure that no matter what a user puts in the widget options, 
     // they will not break the page the widget appears on.
-    $instance['recent_title'] = strip_tags(stripslashes($new_instance['recent_title']));
+    $instance['widget_title'] = strip_tags(stripslashes($new_instance['widget_title']));
     $instance['recent_number'] = strip_tags(stripslashes($new_instance['recent_number']));
+    $instance['recent_title'] = strip_tags(stripslashes($new_instance['recent_title']));
     
     # Include author = checkbox
     $instance['include_author'] = 0;
@@ -123,34 +134,36 @@ class Recent_Posts_Html5 extends WP_Widget {
   Displays the widget
   */
 	function widget($args, $instance) {
-	  // Cache stuff
-		$cache = wp_cache_get('widget_recent_posts', 'widget');
+		$cache = wp_cache_get('widget_recent_posts_html5', 'widget');
 
 		if ( !is_array($cache) )
 			$cache = array();
 
-		if ( isset($cache[$args['widget_id']]) ) {
-			echo $cache[$args['widget_id']];
+		if ( ! isset( $args['widget_id'] ) )
+			$args['widget_id'] = $this->id;
+
+		if ( isset( $cache[ $args['widget_id'] ] ) ) {
+			echo $cache[ $args['widget_id'] ];
 			return;
-		}	
-		
+		}
+
 		ob_start();
-		// create native WP variables.. such as  $before_widget, $before_title, $after_title, and $after_widget
 		extract($args);
 		
 		// extract widget config options. 
     // $title has a special filter applied because it is the title of the widget which WordPress recognizes.
-    $recent_title = apply_filters('widget_title', empty($instance['recent_title']) ? '&nbsp;' : $instance['recent_title']);
+    $widget_title = apply_filters('widget_title', empty($instance['widget_title']) ? '&nbsp;' : $instance['widget_title']);
     $recent_number = empty($instance['recent_number']) ? '5' : $instance['recent_number'];
     $include_author = (isset($instance['include_author']) && $instance['include_author']) ? true : false;
+    $recent_title = empty($instance['recent_title']) ? '&nbsp;' : $instance['recent_title'];
     
     
     # Before the widget
     echo $before_widget;
     
     # The title
-    if ( $recent_title ){
-     echo $before_title . $recent_title . $after_title;
+    if ( $widget_title ){
+     echo $before_title . $widget_title . $after_title;
     }    
     
     // Get posts 
@@ -163,15 +176,11 @@ class Recent_Posts_Html5 extends WP_Widget {
       $query->the_post();
       
       $permalink = get_permalink();
-      $post_title = esc_attr(get_the_title() ? get_the_title() : get_the_ID());
-      if( get_the_title() ){
-        $post_name = get_the_title();
-      } else {
-        $post_name = get_the_ID();
-      }
+      $post_title = esc_attr(get_the_title() ? get_the_title() : $recent_title);
+
       
       $output .= "<li><a href='$permalink'>";
-      $output .= "<cite>$post_name</cite>";
+      $output .= "<cite>$post_title</cite>";
       if( $include_author ){
         $author = get_the_author();
         $output .= "<dt>$author</dt>";
