@@ -22,7 +22,7 @@ Installation
 ---------------------
 
 1. Upload to /wp-content/plugins/
-2. Activate Recent Posts HTML5
+2. Go to Plugins screen: activate Recent Posts HTML5
 3. Go to the Widgets screen
 4. Add widget
 
