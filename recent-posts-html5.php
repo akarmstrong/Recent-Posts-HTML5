@@ -107,6 +107,13 @@ class Recent_Posts_Html5 extends WP_Widget {
       $instance['include_author'] = 1;
     }          
     
+    
+		$this->flush_widget_cache();
+
+		$alloptions = wp_cache_get( 'alloptions', 'options' );
+		if ( isset($alloptions['widget_recent_entries']) )
+			delete_option('widget_recent_entries');    
+    
    return $instance;
 	}
 	
@@ -116,6 +123,16 @@ class Recent_Posts_Html5 extends WP_Widget {
   Displays the widget
   */
 	function widget($args, $instance) {
+	  // Cache stuff
+		$cache = wp_cache_get('widget_recent_posts', 'widget');
+
+		if ( !is_array($cache) )
+			$cache = array();
+
+		if ( isset($cache[$args['widget_id']]) ) {
+			echo $cache[$args['widget_id']];
+			return;
+		}	
 		
 		// create native WP variables.. such as  $before_widget, $before_title, $after_title, and $after_widget
 		extract($args);
@@ -138,42 +155,46 @@ class Recent_Posts_Html5 extends WP_Widget {
     // Get posts 
     $query = new WP_Query(array('posts_per_page' => $recent_number, 'no_found_rows' => true, 'post_status' => 'publish', 'ignore_sticky_posts' => true));
     
-    // Include author with post titles
-    if( $include_author ){
       
-      // Output posts
-      while ($query->have_posts()){
-        $query->the_post();
-        
-        $permalink = get_permalink();
-        $post_title = esc_attr(get_the_title() ? get_the_title() : get_the_ID());
-        if( get_the_title() ){
-          $post_name = get_the_title();
-        } else {
-          $post_name = get_the_ID();
-        }
-        
-        $output = "<cite><li><a href='$permalink' title='$post_title' >$post_name</a></li></cite>";
-        echo $output;
+    // Gather post output
+    $output = "<ul class='recent-posts-html5'>";
+    while ($query->have_posts()){
+      $query->the_post();
+      
+      $permalink = get_permalink();
+      $post_title = esc_attr(get_the_title() ? get_the_title() : get_the_ID());
+      if( get_the_title() ){
+        $post_name = get_the_title();
+      } else {
+        $post_name = get_the_ID();
       }
       
-    // Just do post titles
-    } else {
-    
-      // Output posts
-      for( $post_count = 0; $post_count < $recent_number; $post_count++ ){
-        
+      $output .= "<li><a href='$permalink'>";
+      $output .= "<cite>$post_name</cite>";
+      if( $include_author ){
+        $author = get_the_author();
+        $output .= "<dt>$author</dt>";
+      } 
+      $output .= "</a></li>";
       
-      }
-          
     }
-    
+    $output .= "</ul>";
+    echo $output;
     
     
     # After the widget
     echo $after_widget;    
     
+// Reset the global $the_post as this query will have stomped on it
+		wp_reset_postdata();    
+		$cache[$args['widget_id']] = ob_get_flush();
+		wp_cache_set('widget_recent_posts', $cache, 'widget');    
   }
+  
+  
+	function flush_widget_cache() {
+		wp_cache_delete('widget_recent_posts', 'widget');
+	}  
 		  
 
 
