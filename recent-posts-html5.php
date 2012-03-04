@@ -134,6 +134,7 @@ class Recent_Posts_Html5 extends WP_Widget {
 			return;
 		}	
 		
+		ob_start();
 		// create native WP variables.. such as  $before_widget, $before_title, $after_title, and $after_widget
 		extract($args);
 		
@@ -185,7 +186,7 @@ class Recent_Posts_Html5 extends WP_Widget {
     # After the widget
     echo $after_widget;    
     
-// Reset the global $the_post as this query will have stomped on it
+    // Reset the global $the_post as this query will have stomped on it
 		wp_reset_postdata();    
 		$cache[$args['widget_id']] = ob_get_flush();
 		wp_cache_set('widget_recent_posts', $cache, 'widget');    
